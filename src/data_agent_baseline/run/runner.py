@@ -134,7 +134,7 @@ def _run_single_task_in_subprocess(task_id: str, config: AppConfig, queue: multi
 def _run_single_task_with_timeout(*, task_id: str, config: AppConfig) -> dict[str, Any]:
     timeout_seconds = config.run.task_timeout_seconds
     if timeout_seconds <= 0:
-        print(f"DEBUG: timeout disabled for task_id={task_id}")
+        #print(f"DEBUG: timeout disabled for task_id={task_id}")
         return _run_single_task_core(task_id=task_id, config=config)
 
     queue: multiprocessing.Queue[Any] = multiprocessing.Queue()
@@ -142,39 +142,39 @@ def _run_single_task_with_timeout(*, task_id: str, config: AppConfig) -> dict[st
         target=_run_single_task_in_subprocess,
         args=(task_id, config, queue),
     )
-    print(f"DEBUG: starting subprocess for task_id={task_id}")
+    #print(f"DEBUG: starting subprocess for task_id={task_id}")
     process.start()
 
     deadline = monotonic() + timeout_seconds
-    print(f"DEBUG: subprocess pid={process.pid} started, deadline in {timeout_seconds}s")
+    #print(f"DEBUG: subprocess pid={process.pid} started, deadline in {timeout_seconds}s")
 
     while True:
         remaining = deadline - monotonic()
         if remaining <= 0:
-            print(f"DEBUG: timeout expired for task_id={task_id}")
+            #print(f"DEBUG: timeout expired for task_id={task_id}")
             break
 
         try:
-            print(f"DEBUG: waiting for queue result, remaining={remaining:.3f}s")
+            #print(f"DEBUG: waiting for queue result, remaining={remaining:.3f}s")
             result = queue.get(timeout=min(0.2, remaining))
-            print(f"DEBUG: received queue result for task_id={task_id}, ok={result.get('ok')}")
+            #print(f"DEBUG: received queue result for task_id={task_id}, ok={result.get('ok')}")
             process.join(timeout=0.2)
             if result.get("ok"):
                 return dict(result["run_result"])
             return _failure_run_result_payload(task_id, f"Task failed with uncaught error: {result['error']}")
         except Empty:
             if not process.is_alive():
-                print(f"DEBUG: subprocess for task_id={task_id} exited without queue result")
+                #print(f"DEBUG: subprocess for task_id={task_id} exited without queue result")
                 break
-            print(f"DEBUG: no queue result yet for task_id={task_id}, subprocess still alive")
+            #print(f"DEBUG: no queue result yet for task_id={task_id}, subprocess still alive")
             continue
 
     if process.is_alive():
-        print(f"DEBUG: terminating subprocess for task_id={task_id}")
+        #print(f"DEBUG: terminating subprocess for task_id={task_id}")
         process.terminate()
         process.join(timeout=1.0)
         if process.is_alive():
-            print(f"DEBUG: killing subprocess for task_id={task_id}")
+            #print(f"DEBUG: killing subprocess for task_id={task_id}")
             process.kill()
             process.join()
         return _failure_run_result_payload(task_id, f"Task timed out after {timeout_seconds} seconds.")
@@ -183,7 +183,7 @@ def _run_single_task_with_timeout(*, task_id: str, config: AppConfig) -> dict[st
         result = queue.get_nowait()
     except Empty:
         exit_code = process.exitcode
-        print(f"DEBUG: no result in queue after subprocess exit, exit_code={exit_code}")
+        #print(f"DEBUG: no result in queue after subprocess exit, exit_code={exit_code}")
         if exit_code not in (None, 0):
             return _failure_run_result_payload(
                 task_id,
@@ -231,7 +231,6 @@ def run_single_task(
     tools: ToolRegistry | None = None,
 ) -> TaskRunArtifacts:
     started_at = perf_counter()
-    print("HOLA ")
     if model is None and tools is None:
         run_result = _run_single_task_with_timeout(task_id=task_id, config=config)
     else:

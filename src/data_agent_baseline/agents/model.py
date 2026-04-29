@@ -43,21 +43,17 @@ class OpenAIModelAdapter:
         if not self.api_key:
             raise RuntimeError("Missing model API key in config.agent.api_key.")
 
-        print("hola2")
         client = OpenAI(
             api_key=self.api_key,
             base_url=self.api_base,
         )
 
         try:
-            print("hola3")
             response = client.chat.completions.create(
                 model=self.model,
                 messages=[{"role": message.role, "content": message.content} for message in messages],
                 temperature=self.temperature
             )
-            print(response)
-            print("despues")
         except APIError as exc:
             raise RuntimeError(f"Model request failed: {exc}") from exc
 

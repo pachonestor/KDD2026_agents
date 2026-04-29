@@ -139,7 +139,6 @@ class ReActAgent:
         if state.answer is None and state.failure_reason is None:
             state.failure_reason = "Agent did not submit an answer within max_steps."
 
-        print("caracola")
         return AgentRunResult(
             task_id=task.task_id,
             answer=state.answer,
