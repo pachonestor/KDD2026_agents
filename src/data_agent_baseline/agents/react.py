@@ -33,12 +33,19 @@ def _strip_json_fence(raw_response: str) -> str:
 
 
 def _load_single_json_object(text: str) -> dict[str, object]:
-    payload, end = json.JSONDecoder().raw_decode(text)
-    remainder = text[end:].strip()
-    if remainder:
-        cleaned_remainder = re.sub(r"(?:\\[nrt])+", "", remainder).strip()
-        if cleaned_remainder:
-            raise ValueError("Model response must contain only one JSON object.")
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError as e:
+        # Attempt to fix common issues: incomplete JSON
+        if "Expecting ',' delimiter" in str(e) or "Expecting ':' delimiter" in str(e):
+            # Try to close incomplete objects/arrays
+            fixed_text = text.rstrip() + '}'
+            try:
+                payload = json.loads(fixed_text)
+            except json.JSONDecodeError:
+                raise e
+        else:
+            raise e
     if not isinstance(payload, dict):
         raise ValueError("Model response must be a JSON object.")
     return payload
