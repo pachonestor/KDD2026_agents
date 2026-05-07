@@ -19,6 +19,10 @@ Rules:
 6. Always wrap that JSON object in exactly one fenced code block that starts with ```json and ends with ```.
 7. Do not output any text before or after the fenced JSON block.
 
+Output discipline:
+- execute_python always requires action_input as {"code": "your_python_code_here"} — never pass code as a plain string outside the "code" key.
+
+
 Keep reasoning concise and grounded in the observed data.
 """.strip()
 
@@ -57,4 +61,7 @@ def build_task_prompt(task: PublicTask) -> str:
 
 def build_observation_prompt(observation: dict[str, object]) -> str:
     rendered = json.dumps(observation, ensure_ascii=False, indent=2)
-    return f"Observation:\n{rendered}"
+    reminder = ""
+    if not observation.get("ok"):
+        reminder = "\nReminder: execute_python requires action_input to be {\"code\": \"your_code_here\"} — never pass code as a plain string."
+    return f"Observation:\n{rendered}{reminder}"
