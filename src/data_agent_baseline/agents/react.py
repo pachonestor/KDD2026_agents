@@ -32,13 +32,47 @@ def _strip_json_fence(raw_response: str) -> str:
     return text
 
 
+def _extract_first_json_object(text: str) -> str:
+    start = text.find("{")
+    if start == -1:
+        raise ValueError("Model response must contain a JSON object.")
+
+    depth = 0
+    in_string = False
+    escape = False
+    for index, char in enumerate(text[start:], start=start):
+        if escape:
+            escape = False
+            continue
+        if char == "\\":
+            escape = True
+            continue
+        if char == '"':
+            in_string = not in_string
+            continue
+        if in_string:
+            continue
+        if char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start : index + 1]
+
+    raise ValueError("Model response JSON object is incomplete.")
+
+
 def _load_single_json_object(text: str) -> dict[str, object]:
     try:
         payload = json.loads(text)
     except json.JSONDecodeError as e:
-        # Attempt to fix common issues: incomplete JSON
-        if "Expecting ',' delimiter" in str(e) or "Expecting ':' delimiter" in str(e):
-            # Try to close incomplete objects/arrays
+        if "Extra data" in str(e) or "Expecting value" in str(e):
+            try:
+                candidate = _extract_first_json_object(text)
+                payload = json.loads(candidate)
+            except (ValueError, json.JSONDecodeError):
+                raise e
+        elif "Expecting ',' delimiter" in str(e) or "Expecting ':' delimiter" in str(e):
             fixed_text = text.rstrip() + '}'
             try:
                 payload = json.loads(fixed_text)
@@ -62,6 +96,8 @@ def parse_model_step(raw_response: str) -> ModelStep:
         raise ValueError("thought must be a string.")
     if not isinstance(action, str) or not action:
         raise ValueError("action must be a non-empty string.")
+    if isinstance(action_input, str) and action == "execute_python":
+        action_input = {"code": action_input}
     if not isinstance(action_input, dict):
         raise ValueError("action_input must be a JSON object.")
 

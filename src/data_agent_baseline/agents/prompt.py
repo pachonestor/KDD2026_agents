@@ -29,7 +29,6 @@ Rules:
 Output discipline:
 - execute_python always requires action_input as {"code": "your_python_code_here"} — never pass code as a plain string outside the "code" key.
 - Escape special characters in strings correctly (e.g., use \\n for newlines, \\\" for quotes).
-- execute_python must always use encoding="utf-8" when writing files, and decoding with encoding="utf-8" when reading files.
 - Do not use `json.load` directly on task JSON files unless you have confirmed the file is complete and valid.
   If the JSON is large or the preview is truncated, read the file as raw text and extract only the fields you need.
 

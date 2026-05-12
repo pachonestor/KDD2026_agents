@@ -73,12 +73,12 @@ def build_model_adapter(config: AppConfig):
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def _write_csv(path: Path, columns: list[str], rows: list[list[Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", newline="") as handle:
+    with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
         writer.writerow(columns)
         for row in rows:
